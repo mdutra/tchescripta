@@ -1,0 +1,53 @@
+OP_ADD mais
+OP_SUB menos
+OP_MUL vezes
+OP_DIV dividido por
+OP_INC ++ incrementa
+OP_DEC -- decrementa
+OP_EXP ** na
+PAR_OPEN (
+PAR_CLOSE )
+OP_ATRIB = é
+
+IDENTIFIER
+INT_NUMBER
+FLOAT_NUMBER
+STRING
+
+OP_LOG_AND && e
+OP_LOG_OR || ou
+OP_LOG_EQUAL == é igual a
+OP_LOG_DIFF != é diferente
+OP_LOG_NOT ! não
+OP_LOG_LT < é menor que
+OP_LOG_LE <= é menor ou igual a
+OP_LOG_GT >
+OP_LOG_GE >=
+
+KW_IF se
+KW_ELSE senão
+KW_FOR para
+KW_WHILE enquanto
+KW_INT int
+KW_FLOAT real
+KW_STRING texto
+KW_PRINT mostra
+KW_INPUT leia
+
+TRUE verdadeiro
+FALSE falso
+
+KW_FUNC_OPEN como
+KW_FUNC_CLOSE e deu
+KW_IF_OPEN então
+KW_IF_CLOSE e deu
+KW_FOR_OPEN faça
+KW_FOR_CLOSE e deu
+
+KW_FUNCTION define
+
+KW_FUNC_OPEN_ARGS com
+KW_FUNC_ARGS_SEP ,
+KW_FPUNC .
+
+comentario r'#.*\n'
