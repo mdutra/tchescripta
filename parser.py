@@ -1,8 +1,3 @@
-"""
-Analisador sintático.
-
-Disciplina de compiladores, UNIPAMPA, 2017
-"""
 import sys
 from ply import yacc
 from scanner import tokens
@@ -343,38 +338,6 @@ def p_expressao_comp44(p):
 def p_expressao_comp5(p):
     'comp5 : KW_EQUAL KW_TO'
     p[0] = p[1]+'_'+p[2]
-
-
-# def p_expressao_chamada(p):
-#     ''': KW_PRINT args
-#                  | KW_INPUT args
-#                  | KW_PUT args
-#                  | IDENTIFIER com_args
-#     '''
-#     p[0] = Node('funcao', children=[p[2]], leaf=p[1])
-
-
-# def p_args(p):
-#     '''args      : lista_args
-#                  | vazio
-#     '''
-#     if p.slice[1].type == "lista_args":
-#         p[0] = Node('args', children=[p[1]])
-
-
-# def p_com_args(p):
-#     '''com_args  : KW_FUNC_OPEN_ARGS lista_args
-#                  | vazio
-#     '''
-#     if p.slice[1].type == "KW_FUNC_OPEN_ARGS":
-#         p[0] = Node('com_args', children=[p[2]], leaf=p[1])
-
-
-
-
-# def p_empty(p):
-#     'vazio :'
-#     pass
 
 
 # Error rule for syntax errors
