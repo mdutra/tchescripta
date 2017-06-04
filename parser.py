@@ -43,38 +43,42 @@ class Node:
 
 
     def visit(self):
-        global t
-        print("visiting {} node".format(self.type))
         if self.type == 'funcao':
             #start new scope
             scope.append(None)
-            print("Started new scope")
             self.children[0].visit()
             if len(self.children) > 1:
                 self.children[1].visit()
             while scope.pop(): pass
-        # elif self.type == 'lista_params':
-        #     for c in self.children:
-        #         c.visit()
+
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
-            print("Added {} to the scope".format(self.children[0]))
-            print("Scope looks like this {}".format(scope))
+
+        elif self.type == 'declaracao':
+            global t
+            t = self.leaf
+            self.children[0].visit()
+
         elif self.type == 'atribuicao':
             if (len(self.children) > 1):
                 self.children[1].visit()
             scope.append((self.children[0], t))
-            print(scope)
+
+        elif self.type == 'acao_atribuicao':
+            for var in scope[::-1]:
+                if var and var[0] == self.children[0]:
+                    break
+            else:
+                print("{} não foi definido".format(self.children[0]))
+            self.children[1].visit()
+
         elif self.type == 'id':
             for var in scope[::-1]:
                 if var and var[0] == self.leaf:
-                    print("{} found".format(self.leaf))
                     break
             else:
-                print("{} not found".format(self.leaf))
-        elif self.type == 'declaracao':
-            t = self.leaf
-            self.children[0].visit()
+                print("{} não foi definido".format(self.leaf))
+
         else:
             for child in self.children:
                 if isinstance(child, Node):
@@ -130,7 +134,6 @@ def p_declaracao_funcao(p):
 def p_declaracao_funcao_inicio(p):
     '''funcao_inicio : KW_FUNCTION IDENTIFIER
     '''
-    #p[0] = Node('funcao', children=[p[1]], leaf=p[2])
     p[0] = p[2]
 
 
@@ -204,14 +207,14 @@ def p_acao_retorna(p):
 
 def p_acao_atribuicao(p):
     'acao : IDENTIFIER KW_IS expressao'
-    p[0] = Node('atribuicao', children=[p[1], p[3]], leaf=p[2])
+    p[0] = Node('acao_atribuicao', children=[p[1], p[3]], leaf=p[2])
 
 
 #Tem um shift/reduce entre esses e "expressao -> idf[e]"
 def p_acao_atribuicao_vetor(p):
     'acao : IDENTIFIER BRACKET_OPEN expressao BRACKET_CLOSE KW_IS expressao'
     indice = Node('indice', children=[p[3]])
-    p[0] = Node('atribuicao', children=[p[1], indice, p[6]], leaf=p[5])
+    p[0] = Node('acao_atribuicao', children=[p[1], indice, p[6]], leaf=p[5])
 
 
 def p_acao_enquanto(p):
