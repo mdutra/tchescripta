@@ -42,22 +42,29 @@ class Node:
 
 
     def visit(self):
-        if self.type == 'funcao_estrutura':
+        print("visiting {} node".format(self.type))
+        if self.type == 'funcao':
             #start new scope
-            scope.append(None) 
-            self.children[1].visit() #lista_params
-            self.children[2].visit() #inside_funcion
-            print(scope)
+            scope.append(None)
+            print("Started new scope")
+            self.children[0].visit()
+            if len(self.children) > 1:
+                self.children[1].visit()
             while scope.pop(): pass
         elif self.type == 'lista_params':
             for c in self.children:
                 c.visit()
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
+            print("Added {} to the scope".format(self.children[0]))
+            print("Scope looks like this {}".format(scope))
         elif self.type == 'valor':
             for var in scope[::-1]:
                 if var and var[0] == self.leaf:
                     print("{} found".format(self.leaf))
+                    break
+            else:
+                print("{} not found".format(self.leaf))
         else:
             for child in self.children:
                 if isinstance(child, Node):
@@ -105,15 +112,16 @@ def p_declaracao_funcao(p):
                   | funcao_inicio KW_FUNC_OPEN_ARGS lista_params funcao_fim
     '''
     if p.slice[2].type == "funcao_fim":
-        p[0] = Node('funcao_estrutura', children=[p[1], p[2]])
+        p[0] = Node('funcao', children=[p[2]], leaf=p[1])
     else:
-        p[0] = Node('funcao_estrutura', children=[p[1], p[3], p[4]])
+        p[0] = Node('funcao', children=[p[3], p[4]], leaf=p[1])
 
 
 def p_declaracao_funcao_inicio(p):
     '''funcao_inicio : KW_FUNCTION IDENTIFIER
     '''
-    p[0] = Node('funcao', children=[p[1]], leaf=p[2])
+    #p[0] = Node('funcao', children=[p[1]], leaf=p[2])
+    p[0] = p[2]
 
 
 def p_declaracao_funcao_fim(p):
