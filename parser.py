@@ -7,6 +7,7 @@ import sys
 from ply import yacc
 from scanner import tokens
 
+scope = []
 
 class Node:
     def __init__(self, type, children=None, leaf=None):
@@ -41,6 +42,28 @@ class Node:
         children_string = ', '.join([str(c) for c in self.children]) if self.children else ''
         leaf_string = '{} '.format(self.leaf) if self.leaf is not None else ''
         return '({} {}[{}])'.format(self.type, leaf_string, children_string)
+
+    def visit(self):
+        if self.type == 'funcao_estrutura':
+            #start new scope
+            scope.append(None) 
+            self.children[1].visit() #lista_params
+            self.children[2].visit() #inside_funcion
+            print(scope)
+            while scope.pop(): pass
+        elif self.type == 'lista_params':
+            for c in self.children:
+                c.visit()
+        elif self.type == 'var':
+            scope.append((self.children[0], self.leaf))
+        elif self.type == 'valor':
+            for var in scope[::-1]:
+                if var and var[0] == self.leaf:
+                    print("{} found".format(self.leaf))
+        else:
+            for child in self.children:
+                if isinstance(child, Node):
+                    child.visit()
 
 
 precedence = (
@@ -376,6 +399,9 @@ else:
     data = file.read();
 
     ast = parser.parse(data)
-    print(ast.pretty())
+
+    ast.visit()
+
+    #print(ast.pretty())
 
     file.close()
