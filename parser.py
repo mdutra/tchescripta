@@ -30,13 +30,16 @@ class Node:
                 string.append('{}{}'.format(prefix, child))
         return string
 
+
     def pretty(self):
         return '\n'.join(self._pretty())
+
 
     def __str__(self):
         children_string = ', '.join([str(c) for c in self.children]) if self.children else ''
         leaf_string = '{} '.format(self.leaf) if self.leaf is not None else ''
         return '({} {}[{}])'.format(self.type, leaf_string, children_string)
+
 
     def visit(self):
         if self.type == 'funcao_estrutura':
@@ -72,6 +75,7 @@ precedence = (
         ('left', 'OP_EXP'),
         #('left', 'KW_PUT')
 )
+
 
 def p_codigo(p):
     '''codigo : codigo comando KW_FPUNC
@@ -127,6 +131,7 @@ def p_lista_params(p):
     else:
         p[0] = p[1]
 
+
 def p_param(p):
     'param : tipo IDENTIFIER'
     p[0] = Node('var', children=[p[2]], leaf=p[1])
@@ -139,6 +144,7 @@ def p_tipo(p):
             | KW_LIST
     '''
     p[0] = p[1]
+
 
 def p_lista_atribuicoes(p):
     '''lista_atribuicoes : lista_atribuicoes KW_FUNC_ARGS_SEP atribuicao
@@ -194,18 +200,22 @@ def p_acao_enquanto(p):
     '''acao : KW_WHILE expressao fim_loop'''
     p[0] = Node('enquanto', children=[p[2], p[3]])
 
+
 def p_acao_bota(p):
     'acao : KW_PUT expressao KW_IN IDENTIFIER'
     p[0] = Node('bota', children=[p[2]], leaf=p[4])
+
 
 def p_acao_para(p):
     '''acao : KW_FOR IDENTIFIER KW_IN IDENTIFIER fim_loop'''
     definicao = Node('definicao_loop', children=[p[2], p[4]], leaf=p[3])
     p[0] = Node('para', children=[definicao, p[5]])
 
+
 def p_fim_loop(p):
     '''fim_loop :  KW_LOOP_OPEN codigo KW_AND KW_DONE'''
     p[0] = Node('inside_loop', children=[p[2]])
+
 
 def p_condicao(p):
     'condicao : KW_IF expressao KW_IF_OPEN codigo fim_condicao'
@@ -273,7 +283,6 @@ def p_expressao_vetor(p):
     p[0] = Node('atribuicao', children=[p[1], indice])
 
 
-
 def p_expressao_chamada(p):
     '''expressao : func lista_args
                  | IDENTIFIER KW_FUNC_OPEN_ARGS lista_args
@@ -295,7 +304,6 @@ def p_lista_args(p):
     '''lista_args : lista_args KW_FUNC_ARGS_SEP expressao
                   | expressao
     '''
-
     if p.slice[1].type == "lista_args":
         p[0] = Node('lista_args', children=[p[1], p[3]], leaf=p[2])
     else:
@@ -360,11 +368,7 @@ if (len(sys.argv) < 2):
 else:
     file = open(sys.argv[1], 'r')
     data = file.read();
-
     ast = parser.parse(data)
-
     ast.visit()
-
     #print(ast.pretty())
-
     file.close()
