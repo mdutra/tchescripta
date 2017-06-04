@@ -3,6 +3,7 @@ from ply import yacc
 from scanner import tokens
 
 scope = []
+t = ""
 
 class Node:
     def __init__(self, type, children=None, leaf=None):
@@ -42,6 +43,7 @@ class Node:
 
 
     def visit(self):
+        global t
         print("visiting {} node".format(self.type))
         if self.type == 'funcao':
             #start new scope
@@ -51,20 +53,28 @@ class Node:
             if len(self.children) > 1:
                 self.children[1].visit()
             while scope.pop(): pass
-        elif self.type == 'lista_params':
-            for c in self.children:
-                c.visit()
+        # elif self.type == 'lista_params':
+        #     for c in self.children:
+        #         c.visit()
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
             print("Added {} to the scope".format(self.children[0]))
             print("Scope looks like this {}".format(scope))
-        elif self.type == 'valor':
+        elif self.type == 'atribuicao':
+            if (len(self.children) > 1):
+                self.children[1].visit()
+            scope.append((self.children[0], t))
+            print(scope)
+        elif self.type == 'id':
             for var in scope[::-1]:
                 if var and var[0] == self.leaf:
                     print("{} found".format(self.leaf))
                     break
             else:
                 print("{} not found".format(self.leaf))
+        elif self.type == 'declaracao':
+            t = self.leaf
+            self.children[0].visit()
         else:
             for child in self.children:
                 if isinstance(child, Node):
@@ -104,7 +114,7 @@ def p_comando(p):
 def p_declaracao(p):
     '''declaracao : tipo lista_atribuicoes
     '''
-    p[0] = Node('declaracao', children=[p[1], p[2]])
+    p[0] = Node('declaracao', children=[p[2]], leaf=p[1])
 
 
 def p_declaracao_funcao(p):
@@ -159,14 +169,14 @@ def p_lista_atribuicoes(p):
                          | atribuicao
     '''
     if p.slice[1].type == "lista_atribuicoes":
-        p[0] = Node('lista_atribuicoes', children=[p[1], p[3]], leaf=p[2])
+        p[0] = Node('lista_atribuicoes', children=[p[1], p[3]])
     else:
-        p[0] = Node('atribuicao', children=[p[1]])
+        p[0] = p[1]
 
 
 def p_atribuicao(p):
     'atribuicao : IDENTIFIER'
-    p[0] = p[1]
+    p[0] = Node('atribuicao', children=[p[1]])
 
 
 def p_atribuicao_valor(p):
@@ -282,7 +292,10 @@ def p_expressao_valor(p):
                  | FALSE
                  | IDENTIFIER
     '''
-    p[0] = Node('valor', leaf=p[1])
+    if p.slice[1].type == "IDENTIFIER":
+        p[0] = Node('id', leaf=p[1])
+    else:
+        p[0] = Node('valor', leaf=p[1])
 
 
 def p_expressao_vetor(p):
@@ -378,5 +391,5 @@ else:
     data = file.read();
     ast = parser.parse(data)
     ast.visit()
-    #print(ast.pretty())
+    print(ast.pretty())
     file.close()
