@@ -1,8 +1,11 @@
 define soma com int x, real y como
-    define soma com int z, real w como
-        # Soma dois números
-        retorna x mais y.
+    define subtrai com int z, real w como
+        retorna z menos w.
     e deu.
-    # Soma dois números
+
+    define multiplica com int n1, real n2 como
+        retorna n1 vezes n2.
+    e deu.
+
     retorna x mais y.
 e deu.

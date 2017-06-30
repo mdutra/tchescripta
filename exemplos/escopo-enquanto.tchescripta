@@ -1,0 +1,8 @@
+int i é 0.
+int j.
+enquanto i é menor que 10 faça
+    j é 5.
+    mostra l[i].
+    mostra l2[i].
+    incrementa i.
+e deu.

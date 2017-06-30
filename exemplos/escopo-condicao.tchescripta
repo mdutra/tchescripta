@@ -1,0 +1,15 @@
+int x.
+se x é menor ou igual a 10 então
+    decrementa x.
+    int y.
+    y é x vezes 10.
+senão se x é maior que 20 então
+    int z.
+    incrementa x.
+    se z é igual a 3 então
+        int w.
+    e deu.
+    mostra w.
+tá bom então
+    x é 0.
+e deu.

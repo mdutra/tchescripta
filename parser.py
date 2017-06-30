@@ -49,8 +49,16 @@ class Node:
             self.children[0].visit()
             if len(self.children) > 1:
                 self.children[1].visit()
+            print(scope)
             while scope.pop(): pass
 
+        elif self.type == 'corpo':
+            scope.append(None)
+            for child in self.children:
+                if isinstance(child, Node):
+                    child.visit()
+            print(scope)
+            while scope.pop(): pass
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
 
@@ -219,7 +227,8 @@ def p_acao_atribuicao_vetor(p):
 
 def p_acao_enquanto(p):
     '''acao : KW_WHILE expressao fim_loop'''
-    p[0] = Node('enquanto', children=[p[2], p[3]])
+    n1 = Node('teste', children=[p[2]])
+    p[0] = Node('enquanto', children=[n1, p[3]])
 
 
 def p_acao_bota(p):
@@ -235,13 +244,14 @@ def p_acao_para(p):
 
 def p_fim_loop(p):
     '''fim_loop :  KW_LOOP_OPEN codigo KW_AND KW_DONE'''
-    p[0] = Node('inside_loop', children=[p[2]])
+    p[0] = Node('corpo', children=[p[2]])
 
 
 def p_condicao(p):
     'condicao : KW_IF expressao KW_IF_OPEN codigo fim_condicao'
-    p[0] = Node('condicao', children=[p[2], p[4], p[5]])
-
+    n1 = Node('teste', children=[p[2]])
+    n2 = Node('corpo', children=[p[4]])
+    p[0] = Node('condicao', children=[n1, n2, p[5]])
 
 def p_fim_condicao(p):
     '''fim_condicao : KW_ELSE condicao
@@ -253,7 +263,7 @@ def p_fim_condicao(p):
     elif p.slice[1].type == "KW_ITS":
         p[0] = Node('senão', children=[p[4], p[5]])
     else:
-        p[0] = Node('fim_condicao', leaf=p[1]+'_'+p[2])
+        p[0] = p[1]+'_'+p[2]
 
 
 def p_expressao_paren(p):
@@ -388,7 +398,8 @@ if (len(sys.argv) < 2):
         if not s:
             continue
         ast = parser.parse(s)
-        print(ast.pretty())
+        ast.visit()
+        #print(ast.pretty())
 else:
     file = open(sys.argv[1], 'r')
     data = file.read();
