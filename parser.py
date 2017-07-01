@@ -52,13 +52,27 @@ class Node:
             print(scope)
             while scope.pop(): pass
 
-        elif self.type == 'corpo':
+        elif self.type == 'corpo' or self.type == 'para' or self.type == 'enquanto':
             scope.append(None)
             for child in self.children:
                 if isinstance(child, Node):
                     child.visit()
             print(scope)
             while scope.pop(): pass
+        elif self.type == 'definicao_loop':
+            # caso "para A em B faça"
+            # Verifica se B está no escopo
+            for var in scope[::-1]:
+                if var and var[0] == self.children[1]:
+                    break
+            else:
+                print("{} não foi definido".format(self.children[1]))
+
+            # Adiciona A no escopo (falta o tipo)
+            scope.append((self.children[0], None))
+
+        # elif self.type == 'para' or self.type == 'enquanto':
+        #     'outro escopo'
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
 
@@ -244,7 +258,7 @@ def p_acao_para(p):
 
 def p_fim_loop(p):
     '''fim_loop :  KW_LOOP_OPEN codigo KW_AND KW_DONE'''
-    p[0] = Node('corpo', children=[p[2]])
+    p[0] = Node('corpo_loop', children=[p[2]])
 
 
 def p_condicao(p):

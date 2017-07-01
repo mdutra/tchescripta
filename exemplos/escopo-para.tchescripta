@@ -1,6 +1,7 @@
-int valor.
+lista l.
 para valor em l faça
-    int b.
+    int b, c.
+    mostra b.
     bota valor na 2 em l.
 e deu.
-mostra b.
+mostra c.
