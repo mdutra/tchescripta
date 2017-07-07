@@ -96,35 +96,41 @@ class Node:
                 print("{} não foi definido".format(self.children[0]))
             self.children[1].visit()
 
-        # elif self.type == 'id':
-        #     for var in scope[::-1]:
-        #         if var and var[0] == self.leaf:
-        #             break
-        #     else:
-        #         print("{} não foi definido".format(self.leaf))
+        elif self.type == 'id':
+            for var in scope[::-1]:
+                if var and var[0] == self.leaf:
+                    break
+            else:
+                print("{} não foi definido".format(self.leaf))
 
-        elif self.type == 'bin_op':
+        elif self.type == 'bin_op' or self.type == 'comp_op':
             for child in self.children:
-                val_type = ""
+                val_type = ''
                 if isinstance(child, Node):
                     child.visit()
-                if child.type == "id":
+                if child.type == 'id':
                     for var in scope[::-1]:
                         if var and var[0] == child.leaf:
                             val_type = var[1]
                             break
-                    else:
-                        print("{} não foi definido".format(self.leaf))
                 else:
                     val_type = child.type
 
-                if val_type == "valor_int" or val_type == "int":
-                    if self.type == 'bin_op':
-                        self.type += "_int"
-                elif val_type == "valor_real" or val_type == "real":
-                        self.type = "_real"
+                if val_type == 'valor_int' or val_type == 'int':
+                    if self.type == 'comp_op' or self.type == 'bool':
+                        self.type = 'bool'
+                    elif self.type != 'real':
+                        self.type = 'int'
+                    # Todas as operações de dividir retornam "real"
+                    if self.leaf == 'dividido_por':
+                        self.type = 'real'
+                elif val_type == 'valor_real' or val_type == 'real':
+                    if self.type == 'comp_op' or self.type == 'bool':
+                        self.type = 'bool'
+                    else:
+                        self.type = 'real'
                 else:
-                    print("A operação {} não suporta o tipo {}.".format(self.leaf, val_type))
+                    print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
 
         else:
             for child in self.children:
