@@ -71,8 +71,6 @@ class Node:
             # Adiciona A no escopo (falta o tipo)
             scope.append((self.children[0], None))
 
-        # elif self.type == 'para' or self.type == 'enquanto':
-        #     'outro escopo'
         elif self.type == 'var':
             scope.append((self.children[0], self.leaf))
 
@@ -84,6 +82,10 @@ class Node:
         elif self.type == 'atribuicao':
             if (len(self.children) > 1):
                 self.children[1].visit()
+
+            # if not t == ?:
+            #     print("Conflito de tipos: {} - {}".format(t, ?))
+
             scope.append((self.children[0], t))
 
         elif self.type == 'acao_atribuicao':
@@ -94,12 +96,35 @@ class Node:
                 print("{} não foi definido".format(self.children[0]))
             self.children[1].visit()
 
-        elif self.type == 'id':
-            for var in scope[::-1]:
-                if var and var[0] == self.leaf:
-                    break
-            else:
-                print("{} não foi definido".format(self.leaf))
+        # elif self.type == 'id':
+        #     for var in scope[::-1]:
+        #         if var and var[0] == self.leaf:
+        #             break
+        #     else:
+        #         print("{} não foi definido".format(self.leaf))
+
+        elif self.type == 'bin_op':
+            for child in self.children:
+                val_type = ""
+                if isinstance(child, Node):
+                    child.visit()
+                if child.type == "id":
+                    for var in scope[::-1]:
+                        if var and var[0] == child.leaf:
+                            val_type = var[1]
+                            break
+                    else:
+                        print("{} não foi definido".format(self.leaf))
+                else:
+                    val_type = child.type
+
+                if val_type == "valor_int" or val_type == "int":
+                    if self.type == 'bin_op':
+                        self.type += "_int"
+                elif val_type == "valor_real" or val_type == "real":
+                        self.type = "_real"
+                else:
+                    print("A operação {} não suporta o tipo {}.".format(self.leaf, val_type))
 
         else:
             for child in self.children:
@@ -298,7 +323,9 @@ def p_expressao_bin(p):
     if p.slice[2].type == "OP_DIV":
         p[0] = Node('bin_op', children=[p[1], p[4]], leaf=p[2]+'_'+p[3])
     elif p.slice[2].type == "comp":
-        p[0] = Node('bool_op', children=[p[1], p[3]], leaf=p[2])
+        p[0] = Node('comp_op', children=[p[1], p[3]], leaf=p[2])
+    elif p.slice[2].type == "KW_AND" or p.slice[2].type == "KW_OR":
+        p[0] = Node('log_op', children=[p[1], p[3]], leaf=p[2])
     else:
         p[0] = Node('bin_op', children=[p[1], p[3]], leaf=p[2])
 
@@ -319,10 +346,17 @@ def p_expressao_valor(p):
                  | FALSE
                  | IDENTIFIER
     '''
-    if p.slice[1].type == "IDENTIFIER":
+    val_type = p.slice[1].type
+    if val_type == "IDENTIFIER":
         p[0] = Node('id', leaf=p[1])
+    elif val_type == "INT_NUMBER":
+        p[0] = Node('valor_int', leaf=p[1])
+    elif val_type == "FLOAT_NUMBER":
+        p[0] = Node('valor_real', leaf=p[1])
+    elif val_type == "STRING":
+        p[0] = Node('valor_texto', leaf=p[1])
     else:
-        p[0] = Node('valor', leaf=p[1])
+        p[0] = Node('valor_bool', leaf=p[1])
 
 
 def p_expressao_vetor(p):
