@@ -169,6 +169,12 @@ class Node:
             else:
                 print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
 
+        elif self.type == 'teste':
+            for child in self.children:
+                if isinstance(child, Node):
+                    child.visit()
+            if self.children[0].datatype != 'bool':
+                print('Condição não aceita o tipo {}.'.format(self.children[0].datatype))
 
         else:
             for child in self.children:
