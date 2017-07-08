@@ -6,7 +6,7 @@ scope = []
 t = ""
 
 class Node:
-    def __init__(self, type, children=None, leaf=None):
+    def __init__(self, type, children=None, leaf=None, datatype=None):
         self.type = type
         if children:
             if not isinstance(children, (list, tuple)):
@@ -15,6 +15,7 @@ class Node:
         else:
             self.children = []
         self.leaf = leaf
+        self.datatype = datatype
 
 
     def _pretty(self, prefix='| '):
@@ -22,6 +23,8 @@ class Node:
         root = '{}'.format(str(self.type))
         if self.leaf is not None:
             root += ' ({})'.format(self.leaf)
+        if self.datatype is not None:
+            root += ' [{}]'.format(self.datatype)
         string.append(root)
         for child in self.children:
             if isinstance(child, Node):
@@ -82,15 +85,16 @@ class Node:
         elif self.type == 'atribuicao':
             if (len(self.children) > 1):
                 self.children[1].visit()
-
-            # if not t == ?:
-            #     print("Conflito de tipos: {} - {}".format(t, ?))
+                if self.children[1].datatype and t != self.children[1].datatype:
+                    print("Atribuição com conflito de tipos: {} - {}".format(t, self.children[1].datatype))
 
             scope.append((self.children[0], t))
 
         elif self.type == 'acao_atribuicao':
             for var in scope[::-1]:
                 if var and var[0] == self.children[0]:
+                    if self.children[1].datatype and var[1] != self.children[1].datatype:
+                        print("Atribuição com conflito de tipos: {} - {}".format(var[1], self.children[1].datatype))
                     break
             else:
                 print("{} não foi definido".format(self.children[0]))
@@ -114,23 +118,57 @@ class Node:
                             val_type = var[1]
                             break
                 else:
-                    val_type = child.type
+                    val_type = child.datatype
 
-                if val_type == 'valor_int' or val_type == 'int':
-                    if self.type == 'comp_op' or self.type == 'bool':
-                        self.type = 'bool'
-                    elif self.type != 'real':
-                        self.type = 'int'
+                if val_type == 'int':
+                    if self.type == 'comp_op':
+                        self.datatype = 'bool'
+                    elif self.datatype != 'real':
+                        self.datatype = 'int'
                     # Todas as operações de dividir retornam "real"
                     if self.leaf == 'dividido_por':
-                        self.type = 'real'
-                elif val_type == 'valor_real' or val_type == 'real':
-                    if self.type == 'comp_op' or self.type == 'bool':
-                        self.type = 'bool'
+                        self.datatype = 'real'
+                elif val_type == 'real':
+                    if self.type == 'comp_op':
+                        self.datatype = 'bool'
                     else:
-                        self.type = 'real'
+                        self.datatype = 'real'
                 else:
                     print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
+
+        elif self.type == 'log_op':
+            for child in self.children:
+                val_type = ''
+                if isinstance(child, Node):
+                    child.visit()
+                if child.type == 'id':
+                    for var in scope[::-1]:
+                        if var and var[0] == child.leaf:
+                            val_type = var[1]
+                            break
+                else:
+                    val_type = child.datatype
+
+                if val_type == 'bool':
+                    self.datatype = 'bool'
+                else:
+                    print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
+
+        elif self.type == 'unary_op':
+            val_type = ''
+            if self.children[0].type == 'id':
+                for var in scope[::-1]:
+                    if var and var[0] == self.children[0].leaf:
+                        val_type = var[1]
+                        break
+            else:
+                val_type = child.datatype
+
+            if val_type == 'int':
+                self.datatype = 'int'
+            else:
+                print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
+
 
         else:
             for child in self.children:
@@ -341,7 +379,10 @@ def p_expressao_unararia(p):
                  | OP_INC expressao
                  | OP_DEC expressao
     '''
-    p[0] = Node('unary_op', children=[p[2]], leaf=p[1])
+    if p.slice[1].type == "KW_NOT":
+        p[0] = Node('log_op', children=[p[2]], leaf=p[1])
+    else:
+        p[0] = Node('unary_op', children=[p[2]], leaf=p[1])
 
 
 def p_expressao_valor(p):
@@ -356,13 +397,13 @@ def p_expressao_valor(p):
     if val_type == "IDENTIFIER":
         p[0] = Node('id', leaf=p[1])
     elif val_type == "INT_NUMBER":
-        p[0] = Node('valor_int', leaf=p[1])
+        p[0] = Node('valor_int', leaf=p[1], datatype="int")
     elif val_type == "FLOAT_NUMBER":
-        p[0] = Node('valor_real', leaf=p[1])
+        p[0] = Node('valor_real', leaf=p[1], datatype="real")
     elif val_type == "STRING":
-        p[0] = Node('valor_texto', leaf=p[1])
+        p[0] = Node('valor_texto', leaf=p[1], datatype="texto")
     else:
-        p[0] = Node('valor_bool', leaf=p[1])
+        p[0] = Node('valor_bool', leaf=p[1], datatype="bool")
 
 
 def p_expressao_vetor(p):
