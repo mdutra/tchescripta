@@ -1,5 +1,4 @@
 import sys
-import itertools
 from ply import yacc
 from scanner import tokens
 import ast
@@ -240,15 +239,21 @@ class Node:
         elif self.type == 'id':
             return ast.Name(self.leaf, ast.Load())
         elif self.type == 'acao_atribuicao':
-            target = ast.Name(self.children[0], ast.Store())
             if len(self.children) > 2:
+                target = ast.Name(self.children[0], ast.Load())
                 ind = self.children[1].to_python_ast()
                 value = self.children[2].to_python_ast()
+                target = ast.Subscript(target, ind, ast.Store())
             else:
+                target = ast.Name(self.children[0], ast.Store())
                 value = self.children[1].to_python_ast()
             return ast.Assign([target], value)
         elif self.type == 'indice':
             return ast.Index(self.children[0].to_python_ast())
+        elif self.type == 'vetor':
+            target = ast.Name(self.children[0], ast.Load())
+            ind = self.children[1].to_python_ast()
+            return ast.Subscript(target, ind, ast.Load())
         elif self.type == 'declaracao':
             return self.children[0].to_python_ast()
         elif self.type == 'atribuicao':
@@ -324,6 +329,17 @@ class Node:
         elif self.type == 'unary_op':
             target = ast.Name(self.children[0].leaf, ast.Store())
             return ast.AugAssign(target, op[self.leaf](), ast.Num(1))
+        elif self.type == 'para':
+            definicao = self.children[0].to_python_ast()
+            corpo_loop = self.children[1].to_python_ast()
+            return ast.For(definicao[0], definicao[1], corpo_loop, [])
+        elif self.type == 'definicao_loop':
+            return [
+                ast.Name(self.children[0], ast.Store()),
+                ast.Name(self.children[1], ast.Load()),
+            ]
+
+
 
 
 precedence = (
@@ -559,7 +575,7 @@ def p_expressao_valor(p):
 def p_expressao_vetor(p):
     'expressao : IDENTIFIER BRACKET_OPEN expressao BRACKET_CLOSE'
     indice = Node('indice', children=[p[3]])
-    p[0] = Node('atribuicao', children=[p[1], indice])
+    p[0] = Node('vetor', children=[p[1], indice])
 
 
 def p_expressao_chamada(p):
@@ -655,7 +671,7 @@ else:
     tree = ast.Module(tree)
     ast.fix_missing_locations(tree)
     print(dump(tree))
-    parseprint('l = [1]\nl[0] = 1')
+    parseprint('l = []\nl[1] = 1')
     exec(compile(tree, filename="<ast>", mode="exec"))
 
     file.close()
