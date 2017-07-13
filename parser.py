@@ -200,7 +200,9 @@ class Node:
                 'é_menor_que': ast.Lt,
                 'é_menor_ou_igual_a': ast.LtE,
                 'é_maior_que': ast.Gt,
-                'é_maior_ou_igual_a': ast.GtE
+                'é_maior_ou_igual_a': ast.GtE,
+                'incrementa': ast.Add,
+                'decrementa': ast.Sub
         }
 
 
@@ -213,8 +215,6 @@ class Node:
                 else:
                     c1.append(c2)
                 return c1
-                # else:
-                #     return [c1, c2]
             else:
                 if isinstance(c1, list):
                     return c1
@@ -298,10 +298,14 @@ class Node:
                 params = ast.arguments([], None, [], [], None, [])
                 corpo = self.children[0].to_python_ast()
             return ast.FunctionDef(self.leaf, params, corpo, [], None)
-
-
-
-            #args_nodes = list(itertools.chain.from_iterable(args_nodes))
+        elif self.type == 'retorna':
+            return ast.Return(self.children[0].to_python_ast())
+        elif self.type == 'func_com':
+            args = self.children[0].to_python_ast()
+            return ast.Expr(ast.Call(ast.Name(self.leaf, ast.Load()), args, []))
+        elif self.type == 'unary_op':
+            target = ast.Name(self.children[0].leaf, ast.Store())
+            return ast.AugAssign(target, op[self.leaf](), ast.Num(1))
 
 
 precedence = (
