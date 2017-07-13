@@ -241,17 +241,35 @@ class Node:
             return ast.Name(self.leaf, ast.Load())
         elif self.type == 'acao_atribuicao':
             target = ast.Name(self.children[0], ast.Store())
-            value = self.children[1].to_python_ast()
+            if len(self.children) > 2:
+                ind = self.children[1].to_python_ast()
+                value = self.children[2].to_python_ast()
+            else:
+                value = self.children[1].to_python_ast()
             return ast.Assign([target], value)
+        elif self.type == 'indice':
+            return ast.Index(self.children[0].to_python_ast())
         elif self.type == 'declaracao':
             return self.children[0].to_python_ast()
         elif self.type == 'atribuicao':
             target = ast.Name(self.children[0], ast.Store())
             if len(self.children) > 1:
-                value = self.children[1].to_python_ast()
+                if self.children[1].type == 'range':
+                    value = ast.List(self.children[1].to_python_ast(), ast.Load())
+                else:
+                    value = self.children[1].to_python_ast()
                 return ast.Assign([target], value)
             else:
                 return target
+        elif self.type == 'range':
+            val1 = self.children[0].to_python_ast()
+            val2 = self.children[1].to_python_ast()
+            if isinstance(val1, ast.Num) and isinstance(val2, ast.Num):
+                el = []
+                for v in range(val1.n, val2.n):
+                    el.append(ast.Num(v))
+                return el
+            return None
         elif self.type == 'func':
             args_nodes = self.children[1].to_python_ast()
             if not isinstance(args_nodes, list):
@@ -637,10 +655,7 @@ else:
     tree = ast.Module(tree)
     ast.fix_missing_locations(tree)
     print(dump(tree))
-    parseprint('def soma():\n\treturn 1')
+    parseprint('l = [1]\nl[0] = 1')
     exec(compile(tree, filename="<ast>", mode="exec"))
 
-    # tree = ast.Module(body=[ast.Call(func=ast.Name(id='print', ctx=ast.Load()), args=[ast.Num(n=1)], keywords=[])])
-    # ast.fix_missing_locations(tree)
-    # exec(compile(tree, filename="<ast>", mode="exec"))
     file.close()
