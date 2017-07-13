@@ -1,6 +1,9 @@
 import sys
+import itertools
 from ply import yacc
 from scanner import tokens
+import ast
+from astpp import parseprint, dump
 
 scope = []
 t = ""
@@ -52,7 +55,6 @@ class Node:
             self.children[0].visit()
             if len(self.children) > 1:
                 self.children[1].visit()
-            print(scope)
             while scope.pop(): pass
 
         elif self.type == 'corpo' or self.type == 'para' or self.type == 'enquanto':
@@ -60,7 +62,6 @@ class Node:
             for child in self.children:
                 if isinstance(child, Node):
                     child.visit()
-            print(scope)
             while scope.pop(): pass
         elif self.type == 'definicao_loop':
             # caso "para A em B faça"
@@ -133,7 +134,7 @@ class Node:
                         self.datatype = 'bool'
                     else:
                         self.datatype = 'real'
-                else:
+                elif val_type:
                     print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
 
         elif self.type == 'log_op':
@@ -151,7 +152,7 @@ class Node:
 
                 if val_type == 'bool':
                     self.datatype = 'bool'
-                else:
+                elif val_type:
                     print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
 
         elif self.type == 'unary_op':
@@ -166,20 +167,141 @@ class Node:
 
             if val_type == 'int':
                 self.datatype = 'int'
-            else:
+            elif val_type:
                 print('A operação {} não suporta o tipo {}.'.format(self.leaf, val_type))
 
         elif self.type == 'teste':
             for child in self.children:
                 if isinstance(child, Node):
                     child.visit()
-            if self.children[0].datatype != 'bool':
+            if self.children[0].datatype and self.children[0].datatype != 'bool':
                 print('Condição não aceita o tipo {}.'.format(self.children[0].datatype))
 
         else:
             for child in self.children:
                 if isinstance(child, Node):
                     child.visit()
+
+
+    def to_python_ast(self):
+        op = {
+                'mais': ast.Add,
+                'menos': ast.Sub,
+                'vezes': ast.Mult,
+                'dividido_por': ast.Div,
+                'na': ast.Pow,
+                'e': ast.And,
+                'ou': ast.Or,
+                'não': ast.Not,
+                'verdadeiro': True,
+                'falso': False,
+                'é_igual_a': ast.Eq,
+                'é_diferente_de': ast.NotEq,
+                'é_menor_que': ast.Lt,
+                'é_menor_ou_igual_a': ast.LtE,
+                'é_maior_que': ast.Gt,
+                'é_maior_ou_igual_a': ast.GtE
+        }
+
+
+        if self.type == 'comando':
+            c1 = self.children[0].to_python_ast()
+            if len(self.children) > 1:
+                c2 = self.children[1].to_python_ast()
+                if isinstance(c2, list):
+                    c1.extend(c2)
+                else:
+                    c1.append(c2)
+                return c1
+                # else:
+                #     return [c1, c2]
+            else:
+                if isinstance(c1, list):
+                    return c1
+                else:
+                    return [c1]
+        elif self.type == 'bin_op':
+            return ast.BinOp(self.children[0].to_python_ast(), op[self.leaf](), self.children[1].to_python_ast())
+        elif self.type == 'log_op':
+            if self.leaf == 'não':
+                return ast.UnaryOp(op[self.leaf](), self.children[0].to_python_ast())
+            else:
+                return ast.BoolOp(op[self.leaf](), [self.children[0].to_python_ast(), self.children[1].to_python_ast()])
+        elif self.type == 'comp_op':
+            return ast.Compare(self.children[0].to_python_ast(), [op[self.leaf]()], [self.children[1].to_python_ast()])
+        elif self.type == 'paren':
+            return self.children[0].to_python_ast()
+        elif self.type == 'valor_int' or self.type == 'valor_real':
+            return ast.Num(self.leaf)
+        elif self.type == 'valor_texto':
+            return ast.Str(self.leaf)
+        elif self.type == 'valor_bool':
+            return ast.NameConstant(op[self.leaf])
+        elif self.type == 'id':
+            return ast.Name(self.leaf, ast.Load())
+        elif self.type == 'acao_atribuicao':
+            target = ast.Name(self.children[0], ast.Store())
+            value = self.children[1].to_python_ast()
+            return ast.Assign([target], value)
+        elif self.type == 'declaracao':
+            return self.children[0].to_python_ast()
+        elif self.type == 'atribuicao':
+            target = ast.Name(self.children[0], ast.Store())
+            if len(self.children) > 1:
+                value = self.children[1].to_python_ast()
+                return ast.Assign([target], value)
+            else:
+                return target
+        elif self.type == 'func':
+            args_nodes = self.children[1].to_python_ast()
+            if not isinstance(args_nodes, list):
+                args_nodes = [args_nodes]
+
+            if self.children[0] == 'mostra':
+                func_node = ast.Name(id='print', ctx=ast.Load())
+            elif self.children[0] == 'leia':
+                func_node = ast.Name(id='input', ctx=ast.Load())
+
+            return ast.Expr(ast.Call(func_node, args_nodes, []))
+        elif self.type == 'lista_args' or self.type == 'lista_atribuicoes' or self.type == 'lista_params':
+            n1 = self.children[0].to_python_ast()
+            n2 = self.children[1].to_python_ast()
+            if isinstance(n1, list):
+                n1.append(n2)
+                return n1
+            else:
+                return [n1, n2]
+        elif self.type == 'condicao':
+            teste = self.children[0].to_python_ast()
+            corpo = self.children[1].to_python_ast()
+            if self.children[2] == 'e_deu':
+                senaose = []
+            else:
+                senaose = self.children[2].to_python_ast()
+
+            return ast.If(teste, corpo, senaose)
+        elif self.type == 'teste' or self.type == 'corpo' or self.type == 'senão' or self.type == 'corpo_loop':
+            return self.children[0].to_python_ast()
+        elif self.type == 'senão se':
+            return [self.children[0].to_python_ast()]
+        elif self.type == 'enquanto':
+            return ast.While(self.children[0].to_python_ast(), self.children[1].to_python_ast(), [])
+        elif self.type == 'var':
+            return ast.arg(self.children[0], None)
+        elif self.type == 'inside_funcion':
+            return self.children[0].to_python_ast()
+        elif self.type == 'funcao':
+            if len(self.children) > 1:
+                params = ast.arguments(self.children[0].to_python_ast(), None, [], [], None, [])
+                corpo = self.children[1].to_python_ast()
+            else:
+                params = ast.arguments([], None, [], [], None, [])
+                corpo = self.children[0].to_python_ast()
+            return ast.FunctionDef(self.leaf, params, corpo, [], None)
+
+
+
+            #args_nodes = list(itertools.chain.from_iterable(args_nodes))
 
 
 precedence = (
@@ -504,7 +626,17 @@ if (len(sys.argv) < 2):
 else:
     file = open(sys.argv[1], 'r')
     data = file.read();
-    ast = parser.parse(data)
-    ast.visit()
-    print(ast.pretty())
+    myast = parser.parse(data)
+    myast.visit()
+    print(myast.pretty())
+    tree = myast.to_python_ast()
+    tree = ast.Module(tree)
+    ast.fix_missing_locations(tree)
+    print(dump(tree))
+    parseprint('def soma():\n\treturn 1')
+    exec(compile(tree, filename="<ast>", mode="exec"))
+
+    # tree = ast.Module(body=[ast.Call(func=ast.Name(id='print', ctx=ast.Load()), args=[ast.Num(n=1)], keywords=[])])
+    # ast.fix_missing_locations(tree)
+    # exec(compile(tree, filename="<ast>", mode="exec"))
     file.close()
