@@ -2,7 +2,6 @@ import sys
 from ply import yacc
 from scanner import tokens
 import ast
-from astpp import parseprint, dump
 
 scope = []
 t = ""
@@ -666,12 +665,11 @@ else:
     data = file.read();
     myast = parser.parse(data)
     myast.visit()
-    print(myast.pretty())
+    #print(myast.pretty())
     tree = myast.to_python_ast()
     tree = ast.Module(tree)
     ast.fix_missing_locations(tree)
-    print(dump(tree))
-    parseprint('l = []\nl[1] = 1')
+    #print(ast.dump(tree))
     exec(compile(tree, filename="<ast>", mode="exec"))
 
     file.close()
