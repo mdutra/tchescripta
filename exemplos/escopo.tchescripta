@@ -2,6 +2,7 @@ define soma com int x, real y como
     define subtrai com int z, real w como
         retorna z menos w.
     e deu.
+    mostra z.
 
     define multiplica com int n1, real n2 como
         retorna n1 vezes n2.

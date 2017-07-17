@@ -1,9 +1,0 @@
-se 10 é menor que 30 então
-    mostra "1".
-senão se 30 é igual a 30 então
-    mostra "2".
-e deu.
-
-enquanto 3 é menor que 1 faça
-    mostra "3".
-e deu.
