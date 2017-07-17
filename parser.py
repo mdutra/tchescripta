@@ -650,16 +650,7 @@ def p_error(p):
 parser = yacc.yacc()
 
 if (len(sys.argv) < 2):
-    while True:
-        try:
-            s = input('calc> ')
-        except EOFError:
-            break
-        if not s:
-            continue
-        ast = parser.parse(s)
-        ast.visit()
-        #print(ast.pretty())
+    print('Uso: {} ARQUIVO_FONTE'.format(sys.argv[0]))
 else:
     file = open(sys.argv[1], 'r')
     data = file.read();
