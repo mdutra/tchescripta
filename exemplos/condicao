@@ -1,0 +1,8 @@
+int x é 10, y é 20.
+se x é menor que y então
+    mostra 'primeiro'.
+senão se x é igual a y então
+    mostra 'segundo'.
+tá bom então
+    mostra 'terceiro'.
+e deu.

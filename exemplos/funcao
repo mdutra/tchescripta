@@ -1,0 +1,4 @@
+define soma com int n1, int n2 como
+    mostra n1 mais n2.
+e deu.
+soma com 2, 3.

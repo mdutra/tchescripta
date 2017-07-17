@@ -1,0 +1,35 @@
+define bubblesort com lista l, int n como
+    int mudou é 1.
+
+    enquanto mudou é igual a 1 faça
+        int i é 0.
+        mudou é 0.
+
+        enquanto i é menor que n menos 1 faça
+            se l[i] é maior que l[i mais 1] então
+                # Swap
+                int temp é l[i].
+                l[i] é l[i mais 1].
+                l[i mais 1] é temp.
+
+                mudou é 1.
+            e deu.
+
+            incrementa i.
+        e deu.
+
+        decrementa n.
+    e deu.
+e deu.
+
+lista l é 0 a 5.
+
+l[0] é 10.
+l[1] é 3.
+l[2] é 8.
+l[3] é 0.
+l[4] é 11.
+
+mostra l.
+bubblesort com l, 5.
+mostra l.

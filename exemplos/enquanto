@@ -1,0 +1,5 @@
+int i é 0.
+enquanto i é menor que 10 faça
+    mostra i.
+    incrementa i.
+e deu.
