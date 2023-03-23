@@ -2,3 +2,4 @@ __pycache__
 parsetab.py
 parser.out
 test*
+.venv
